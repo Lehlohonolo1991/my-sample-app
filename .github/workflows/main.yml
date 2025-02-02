@@ -1,0 +1,34 @@
+name: CI/CD/ Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build and push Docker image
+        run: |
+          podman login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+ registry.github.com
+          podman build -t registry.github.com/${{ github.repository }}:latest .
+          podman push registry.github.com/${{ github.repository }}:latest
+
+      - name: Deploy to server
+        uses: appleboy/ghaction-ssh@master
+        with:
+          host: ${{ secrets.10.128.0.4 }}
+          username: ${{ secrets.lehlohonoloivan}}
+          key: ${[ secrets.SERVER_PRIVATE_KEY }}
+          script: |
+            podman pull registry.github.com/${{ github.repository }}:latest
+            podman stop my-website my-webiste || true
+            podman rm my-website || true
+          podman run -d -p 8081:80 --name my-webiste registry.github.com/${{ github.repository }}:latest
+
+
